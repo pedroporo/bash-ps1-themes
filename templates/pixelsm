@@ -1,0 +1,51 @@
+#!/bin/bash
+scriptDir=$(dirname -- "$(readlink -f -- "$BASH_SOURCE")")
+source $scriptDir'/../lib/lib'
+
+BLACK="#000000"
+BLUE="#0000ff"
+CYAN="#4da1ff"
+GREEN="#2fa008"
+GREY="#9f9aaf"
+MAGENTA="#7000d8"
+RED="#cc0000"
+YELLOW="#c4a000"
+WHITE="#ffffff"
+
+parse_git_bg() {
+	[[ $(git status -s 2> /dev/null) ]] && echo -e "$(rgb_bg_ps1 $YELLOW)" || echo -e "$(rgb_bg_ps1 $GREEN)"
+}
+
+parse_git_fg() {
+	[[ $(git status -s 2> /dev/null) ]] && echo -e "$(rgb_fg_ps1 $YELLOW)" || echo -e "$(rgb_fg_ps1 $GREEN)"
+}
+
+prompt_cmd() {
+  TMP_GIT_BRANCH="$(gitbranch)"
+  TMP_GIT_REMOTE="$(gitremotename)"
+
+  BLOCK_1="$(rgb_fg_ps1 $BLUE)╭─$(rgb_fg_ps1 $palette_gradient_start)$(rgb_bg_ps1 $palette_gradient_start) $(rgb_fg_ps1 $palette_accent)${FMT_BOLD}  $(rgb_fg_ps1 $BLACK) $(current_user) ${FMT_UNBOLD}$(rgb_fg_ps1 $palette_gradient_start)$(rgb_bg_ps1 $BLUE) "
+  
+  BLOCK_2="$(rgb_fg_ps1 $GREY)$(dirs) $(rgb_fg_ps1 $BLUE)$(rgb_bg_ps1 $CYAN) "
+
+  BLOCK_3="$(rgb_fg_ps1 $BLACK)"
+  BLOCK_3+=" \$(find . -mindepth 1 -maxdepth 1 -type d | wc -l) " # print number of folders
+  BLOCK_3+=" \$(find . -mindepth 1 -maxdepth 1 -type f | wc -l) " # print number of files
+  BLOCK_3+=" \$(find . -mindepth 1 -maxdepth 1 -type l | wc -l) " # print number of symlinks
+  BLOCK_3+="${FMT_RESET}$(rgb_fg_ps1 $CYAN)"
+  BLOCK_3+="\$(git branch 2> /dev/null | grep '^*' | colrm 1 2 | xargs -I BRANCH echo -n \"" # check if git branch exists
+  BLOCK_3+="$(parse_git_bg) " # end FILES container / begin BRANCH container
+
+  BLOCK_4="$(rgb_fg_ps1 $BLACK) BRANCH ${FMT_RESET}$(parse_git_fg)\")"
+  LINE_1="${BLOCK_1}${BLOCK_2}${BLOCK_3}${BLOCK_4}"
+  LINE_2="$(rgb_fg_ps1 $BLUE)╰ $(rgb_fg_ps1 $CYAN)\\$ ${FMT_RESET}"
+
+  PS1="\r\n${LINE_1}\r\n${LINE_2}"
+}
+
+if [[ "$TRANSIENT_PROMPT" == "1" ]]; then
+    PS0='\[$(deleteprompt)\]\$ $(lastcommand)\n\[${PS1:0:$((EXPS0=1,0))}\]'
+    export PROMPT_COMMAND='[ "$EXPS0" = 0 ] && deleteprompt && echo -e "\$" || EXPS0=0; prompt_cmd'
+else
+  export PROMPT_COMMAND='prompt_cmd'
+fi

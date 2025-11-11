@@ -1,0 +1,19 @@
+#!/bin/bash
+scriptDir=$(dirname -- "$(readlink -f -- "$BASH_SOURCE")")
+source $scriptDir'/../lib/lib'
+
+prompt_cmd() {
+  TMP_GIT_BRANCH="$(gitbranch)"
+  LINE_1="$(rgb_fg_ps1 $palette_primary_dark)┌───( $(fg_gradient_ps1 $palette_gradient_start $palette_gradient_end ''$(current_user)@$HOSTNAME' )-[ '$(basename $PWD)' ]')"
+  LINE_2="$(rgb_fg_ps1 $palette_primary_dark)│ $(fg_gradient_ps1 $palette_gradient_start $palette_gradient_end $(short_datetime)) $(rgb_fg_ps1 $palette_accent)~ $(rgb_fg_ps1 $palette_secondary)$TMP_GIT_BRANCH"
+  LINE_3="$(rgb_fg_ps1 $palette_primary_dark)└─$(rgb_fg_ps1 $palette_accent) λ $(no_color_ps1)"
+
+  PS1="\r\n${LINE_1}\r\n${LINE_2}\r\n${LINE_3}"
+}
+
+if [[ "$TRANSIENT_PROMPT" == "1" ]]; then
+    PS0='\[$(deleteprompt)\]\$ $(lastcommand)\n\[${PS1:0:$((EXPS0=1,0))}\]'
+    export PROMPT_COMMAND='[ "$EXPS0" = 0 ] && deleteprompt && echo -e "\$" || EXPS0=0; prompt_cmd'
+else
+  export PROMPT_COMMAND='prompt_cmd'
+fi
